@@ -3,7 +3,7 @@ import 'dotenv/config';
 
 async function main() {
     const server = new OMSSServer({
-        name: 'OMSS Backend',
+        name: 'CinePro',
         version: '1.0.0',
 
         // Network
@@ -25,7 +25,7 @@ async function main() {
             },
         },
 
-        // TMDB (required)
+        // TMDB
         tmdb: {
             apiKey: process.env.TMDB_API_KEY!,
             cacheTTL: 24 * 60 * 60, // 24h

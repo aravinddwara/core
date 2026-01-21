@@ -1,185 +1,235 @@
 <div align="center">
 
-# Your OMSS Compliant Streaming Backend Template 🚀
+# CinePro Core 🎬
 
-**Production‑ready starter template** for building OMSS‑compliant streaming backends. Includes server setup, provider system, linting, and an example provider.
+**OMSS-compliant streaming backend** powering the CinePro ecosystem. Built with [@omss/framework](https://www.npmjs.com/package/@omss/framework) for extensible, type-safe media scraping and streaming.
 
 </div>
 
-## Features ✅
+---
 
-- 🚀 **Ready in 5 minutes** – install, set TMDB key, run
-- 📦 **@omss/framework** – official OMSS implementation
-- 🔌 **Auto‑discovery** – drop provider files into `providers/`
-- 🛡️ **Type safety & formatting** – Prettier + TypeScript
-- 📊 **Production‑ready** – Redis cache, Docker support
-- 🎭 **Example provider** – fully commented reference implementation
-- 🔄 **Hot reload** – `npm run dev` for development
+## Overview
 
-## Quick Start ⏱️
+CinePro Core is the foundational backend service that provides OMSS-compliant streaming capabilities for movies and TV shows. This repository serves as the central scraping and streaming engine, designed to work seamlessly with [CineHome](https://github.com/cinepro-org/CineHome-backend) and other CinePro services.
+
+Built on the [OMSS template](https://github.com/omss-spec/template), this backend implements a modular provider system that enables easy integration of multiple streaming sources while maintaining type safety and production-ready standards.
+
+---
+
+## ✨ Features
+
+- 🎯 **OMSS-Compliant** – Follows the Open Media Streaming Standard specification
+- 🔌 **Modular Providers** – Drop-in provider system with auto-discovery
+- 🛡️ **Type-Safe** – Full TypeScript implementation with strict types
+- ⚡ **Production-Ready** – Redis caching, Docker support, error handling
+- 🎬 **Multi-Source** – Support for movies and TV shows from multiple providers
+- 🔄 **Hot Reload** – Development mode with automatic restarts
+- 📦 **CineHome Integration** – Compatible with CineHome download automation
+- 🎭 **Metadata-Rich** – TMDB integration for complete media information
+
+---
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- Node.js 20+
+- Redis (optional, for production caching)
+- TMDB API Key ([get one here](https://www.themoviedb.org/settings/api))
+
+### Installation
 
 ```bash
-# Clone & install
-git clone https://github.com/omss-spec/template.git my-streaming-backend
-cd my-streaming-backend
+# Clone the repository
+git clone https://github.com/cinepro-org/core.git
+cd core
+
+# Install dependencies
 npm install
 
-# Copy env template
+# Configure environment
 cp .env.example .env
-# !Add your TMDB API key!
+# Edit .env and add your TMDB_API_KEY
+```
 
-# Run dev server (auto-reload)
+### Development
+
+```bash
+# Start dev server with hot reload
 npm run dev
+
+# Server runs at http://localhost:3000
 ```
 
-**✅ Server running at http://localhost:3000**
+### Production
 
-Great! You can now add your providers!
+```bash
+# Build and start
+npm run build
+npm start
 
-## 📁 Structure
-
-```
-template/
-├── src/
-│   ├── server.ts           # Main server entrypoint
-│   ├── providers/          # Auto-discovered providers
-│   │   └── example.ts      # Reference provider
-├── .env.example            # Environment template
-├── .prettierrc             # Prettier config
-├── tsconfig.json           # TypeScript config
-├── package.json            # Dependencies + scripts
-└── docker-compose.yml      # Redis + dev setup
+# Or use Docker Compose
+docker-compose up -d
 ```
 
 ---
 
-## 🛠️ Scripts
+## 📁 Project Structure
 
-```bash
-npm run dev      # Dev server with hot reload (tsx watch)
+```
+core/
+├── src/
+│   ├── server.ts           # Main server entrypoint
+│   ├── providers/          # Streaming source providers
+│   │   └── example.ts      # Reference implementation
+├── .env.example            # Environment configuration template
+├── docker-compose.yml      # Redis + server orchestration
+├── package.json            # Dependencies and scripts
+└── tsconfig.json           # TypeScript configuration
 ```
 
 ---
 
 ## 🔌 Adding Providers
 
-**1. Create a provider** (extends `BaseProvider`):
+CinePro Core uses an extensible provider system. Each provider implements the `BaseProvider` interface to supply streaming sources.
 
-```ts
-// src/providers/my-site.ts
+### Create a New Provider
+
+```typescript
+// src/providers/mysite.ts
 import { BaseProvider } from '@omss/framework';
 
 export class MySiteProvider extends BaseProvider {
-    readonly id = 'my-site';
-    readonly name = 'My Site';
-    readonly BASE_URL = 'https://my-site.com';
-    readonly capabilities = { supportedContentTypes: ['movies', 'tv'] };
+    readonly id = 'mysite';
+    readonly name = 'My Streaming Site';
+    readonly BASE_URL = 'https://mysite.com';
+    readonly capabilities = { 
+        supportedContentTypes: ['movies', 'tv'] 
+    };
 
-    // Implement getMovieSources() & getTVSources()
+    async getMovieSources(tmdbId: string) {
+        // Implementation
+    }
+
+    async getTVSources(tmdbId: string, season: number, episode: number) {
+        // Implementation
+    }
 }
 ```
 
-**2. Auto‑discovered** – restart server or use `npm run dev` (watches for changes)
+### Auto-Discovery
 
-**3. Register manually** (in `server.ts`):
-
-```ts
-server.getRegistry().register(new MySiteProvider());
-```
+Place your provider in `src/providers/` and restart the server. The framework automatically discovers and registers new providers.
 
 ---
 
-## ⚙️ Environment
+## ⚙️ Configuration
 
-Copy `.env.example` → `.env` and set:
+### Environment Variables
+
+Create a `.env` file based on `.env.example`:
 
 ```env
 # Required
 TMDB_API_KEY=your_tmdb_api_key_here
 
-# Optional
+# Server Configuration
 PORT=3000
 HOST=localhost
 NODE_ENV=development
 PUBLIC_URL=http://localhost:3000
 
-# Redis (for production)
+# Redis (Production)
 REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_PASSWORD=
 ```
 
+### TMDB API Key
+
+CinePro Core requires a TMDB API key for metadata enrichment:
+
+1. Create a TMDB account at [themoviedb.org](https://www.themoviedb.org/)
+2. Navigate to Settings → API
+3. Request an API key (choose "Developer" option)
+4. Add the key to your `.env` file
+
 ---
 
-## 🚀 Production Deployment
+## 🛠️ Development
 
-### Docker Compose (dev/prod)
+### Scripts
 
 ```bash
-# Start Redis + server
-docker-compose up -d
-
-# Or just Redis
-docker-compose up redis -d
-npm run start
+npm run dev      # Development server with hot reload
+npm run build    # Build for production
+npm start        # Start production server. Requires build first
+npm run format   # Format code with Prettier
 ```
 
-### Docker (single container)
+### Code Standards
 
-```dockerfile
-FROM node:20-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY dist/ ./
-EXPOSE 3000
-CMD ["node", "server.js"]
-```
+- TypeScript strict mode enabled
+- Prettier for code formatting
+- Comprehensive error handling
+- Provider interface compliance
 
 ---
 
-## 🔧 Development Workflow
+## 📚 Documentation
 
-```bash
-# 1. Install
-npm install
-
-# 3. Add providers to src/providers/
-
-# 2. Dev server (auto-reload + type checking)
-npm run dev
-
-# 4. Format code
-npm run format
-
-# 5. Build for prod
-npm run build
-npm run start
-```
-
----
-
-## 📚 Reference
-
-- **OMSS Framework**: [`@omss/framework` on npm](https://www.npmjs.com/package/@omss/framework) [github](https://github.com/ossf/model-signing-spec)
-- **OMSS Spec**: [github.com/omss-spec/omss-spec](https://github.com/omss-spec/omss-spec)
-- **Example Provider**: `src/providers/example.ts` – fully commented
-- **Server Examples**: `src/server.ts` – multiple configs
-
-**See `src/providers/example.ts`** for a complete provider implementation with error handling, logging, proxying, and type safety.
+- **OMSS Specification**: [github.com/omss-spec/omss-spec](https://github.com/omss-spec/omss-spec)
+- **Framework Docs**: [@omss/framework on npm](https://www.npmjs.com/package/@omss/framework)
+- **CinePro Docs**: [cinepro.mintlify.app](https://cinepro.mintlify.app)
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read [our contributing guidelines](https://github.com/omss-spec/omss-spec/blob/main/CONTRIBUTING.md) before submitting PRs.
+CinePro is actively maintained and open to contributors. We welcome: [github](https://github.com/cinepro-org)
+
+- New provider implementations
+- Bug fixes and improvements
+- Documentation enhancements
+- Performance optimizations
+
+### How to Contribute
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-provider`)
+3. Commit your changes (`git commit -m 'Add amazing provider'`)
+4. Push to the branch (`git push origin feature/amazing-provider`)
+5. Open a Pull Request
+
+See [CONTRIBUTING.md](https://github.com/omss-spec/omss-spec/blob/main/CONTRIBUTING.md) for detailed guidelines.
+
+---
+
+## 🔒 Legal Notice
+
+CinePro Core is designed for **personal and home use only**. Users are responsible for ensuring compliance with applicable laws and terms of service for streaming sources. This software does not host, store, or distribute any copyrighted content. [github](https://github.com/cinepro-org)
 
 ---
 
 ## 📄 License
 
-MIT © OMSS Foundation
+MIT © CinePro Organization
 
 ---
 
-**⭐ Star this repo** | **[Click on 'Use this template' & customize]** | **[OMSS Spec](https://github.com/omss-spec/omss-spec)**
+## 🌟 Acknowledgments
+
+- Built with [OMSS Framework](https://github.com/omss-spec)
+- Metadata powered by [The Movie Database (TMDB)](https://www.themoviedb.org/)
+- Template from [omss-spec/template](https://github.com/omss-spec/template)
+
+---
+
+<div align="center">
+
+**[Documentation](https://cinepro.mintlify.app)** -  **[Discussions](https://github.com/orgs/cinepro-org/discussions/)** -  **[Report Issue](https://github.com/cinepro-org/core/issues)**
+
+⭐ **Star this repo** if you find it useful!
+
+</div>
