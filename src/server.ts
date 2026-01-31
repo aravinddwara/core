@@ -1,6 +1,12 @@
 import { OMSSServer } from '@omss/framework';
 import 'dotenv/config';
 
+import { fileURLToPath } from 'node:url'
+import path from 'node:path'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
 async function main() {
     const server = new OMSSServer({
         name: 'CinePro',
@@ -36,8 +42,8 @@ async function main() {
     const registry = server.getRegistry();
 
     // Your custom providers (auto-discovered from ./src/providers/)
-    await registry.discoverProviders('./src/providers');
-
+    await registry.discoverProviders(path.join(__dirname, './providers/'))
+    
     await server.start();
 }
 

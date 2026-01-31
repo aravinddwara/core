@@ -5,12 +5,12 @@
     "scripts": {
         "dev": "tsx watch src/server.ts",
         "build": "tsc",
-        "start": "node dist/server.js",
+        "start": "npm run build && node dist/server.js",
         "format": "prettier --write src",
         "clean": "npx rimraf dist"
     },
     "dependencies": {
-        "@omss/framework": "^1.1.2",
+        "@omss/framework": "^1.1.4",
         "dotenv": "^16.4.5"
     },
     "devDependencies": {

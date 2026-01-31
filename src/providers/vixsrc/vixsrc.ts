@@ -1,5 +1,5 @@
 import { BaseProvider } from '@omss/framework';
-import { ProviderCapabilities, ProviderMediaObject, ProviderResult, Source, Subtitle, Diagnostic } from '@omss/framework';
+import { ProviderCapabilities, ProviderMediaObject, ProviderResult, Source, Subtitle } from '@omss/framework';
 import axios from 'axios';
 
 export class VixSrcProvider extends BaseProvider {
@@ -256,7 +256,7 @@ export class VixSrcProvider extends BaseProvider {
             const url = line.match(/URI="([^"]+)"/)?.[1];
             if (!url) continue;
 
-            const language = line.match(/LANGUAGE="([^"]+)"/)?.[1] ?? 'unknown';
+            const language = line.match(/NAME="([^"]+)"/)?.[1] ?? 'unknown';
 
             subtitles.push({
                 url: this.createProxyUrl(url, {

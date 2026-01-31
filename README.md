@@ -2,7 +2,7 @@
 
 # CinePro Core 🎬
 
-**OMSS-compliant streaming backend** powering the CinePro ecosystem. Built with [@omss/framework](https://www.npmjs.com/package/@omss/framework) for extensible, type-safe media scraping and streaming.
+**OMSS-compliant streaming backend powering the CinePro ecosystem.**</br> Built with [@omss/framework](https://www.npmjs.com/package/@omss/framework) for extensible, type-safe media scraping and streaming.
 
 </div>
 
@@ -10,9 +10,9 @@
 
 ## Overview
 
-CinePro Core is the foundational backend service that provides OMSS-compliant streaming capabilities for movies and TV shows. This repository serves as the central scraping and streaming engine, designed to work seamlessly with [CineHome](https://github.com/cinepro-org/CineHome-backend) and other CinePro services.
+CinePro Core is the foundational backend service of CinePro that uses the Open Media Streaming Standard (OMSS) for movies and TV shows. This repository serves as the central scraping and streaming engine, designed to work seamlessly with the [CinePro ecosystem](https://github.com/orgs/cinepro-org/repositories?type=source).
 
-Built on the [OMSS template](https://github.com/omss-spec/template), this backend implements a modular provider system that enables easy integration of multiple streaming sources while maintaining type safety and production-ready standards.
+Built on the [OMSS template](https://github.com/omss-spec/template), this backend implements a modular provider system that enables easy integration of multiple streaming sources (that means providers) while maintaining type safety and production-ready standards.
 
 ---
 
@@ -24,8 +24,7 @@ Built on the [OMSS template](https://github.com/omss-spec/template), this backen
 - ⚡ **Production-Ready** – Redis caching, Docker support, error handling
 - 🎬 **Multi-Source** – Support for movies and TV shows from multiple providers
 - 🔄 **Hot Reload** – Development mode with automatic restarts
-- 📦 **CineHome Integration** – Compatible with CineHome download automation
-- 🎭 **Metadata-Rich** – TMDB integration for complete media information
+- 📦 **CineHome Integration** – Compatible with CineHome download automation and any other CinePro ecosystem products
 
 ---
 
@@ -34,7 +33,6 @@ Built on the [OMSS template](https://github.com/omss-spec/template), this backen
 ### Prerequisites
 
 - Node.js 20+
-- Redis (optional, for production caching)
 - TMDB API Key ([get one here](https://www.themoviedb.org/settings/api))
 
 ### Installation
@@ -63,13 +61,17 @@ npm run dev
 
 ### Production
 
+> [!Caution]
+> **CinePro Core is designed for personal and home use only.**
+> </br> Users are responsible for ensuring compliance with applicable laws and terms of service for streaming sources.
+
 ```bash
+# Modify .env to match your environment (maybe redis)
+cp .env.example .env
+
 # Build and start
 npm run build
 npm start
-
-# Or use Docker Compose
-docker-compose up -d
 ```
 
 ---
@@ -83,7 +85,6 @@ core/
 │   ├── providers/          # Streaming source providers
 │   │   └── example.ts      # Reference implementation
 ├── .env.example            # Environment configuration template
-├── docker-compose.yml      # Redis + server orchestration
 ├── package.json            # Dependencies and scripts
 └── tsconfig.json           # TypeScript configuration
 ```
