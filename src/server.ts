@@ -1,8 +1,8 @@
 import { OMSSServer } from '@omss/framework';
 import 'dotenv/config';
-
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { knownThirdPartyProxies } from './config.js';
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -36,6 +36,11 @@ async function main() {
             apiKey: process.env.TMDB_API_KEY!,
             cacheTTL: 24 * 60 * 60, // 24h
         },
+
+        // Third Party Proxy removal
+        proxyConfig: {
+            knownThirdPartyProxies: knownThirdPartyProxies
+        }
     });
 
     // Register providers

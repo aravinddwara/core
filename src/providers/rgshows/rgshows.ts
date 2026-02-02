@@ -53,7 +53,7 @@ export class RgShowsProvider extends BaseProvider {
             const result: ProviderResult = {
                 sources: [{
                     url: this.createProxyUrl(resp.stream.url, this.HEADERS),
-                    quality: 'Up to HD',
+                    quality: '1080p',
                     type: 'mp4',
                     audioTracks: [
                         {

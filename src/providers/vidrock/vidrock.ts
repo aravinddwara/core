@@ -66,6 +66,7 @@ export class VidRockProvider extends BaseProvider {
 
                         sources.push({
                             url: this.createProxyUrl(finalUrl, { ...this.HEADERS, Referer: 'https://lok-lok.cc/', Origin: 'https://lok-lok.cc/' }),
+                            type:'hls',
                             quality: obj.resolution + 'p',
                             audioTracks: [
                                 {
@@ -74,7 +75,7 @@ export class VidRockProvider extends BaseProvider {
                                 },
                             ],
                             provider: { id: this.id, name: this.name },
-                        } as Source);
+                        });
                     });
 
                     continue;
@@ -84,7 +85,8 @@ export class VidRockProvider extends BaseProvider {
 
                 sources.push({
                     url: finalUrl,
-                    quality: 'up to HD',
+                    quality: '1080p',
+                    type:'hls',
                     audioTracks: [
                         {
                             language: stream.language === 'English' ? 'eng' : 'unknown',
@@ -92,7 +94,7 @@ export class VidRockProvider extends BaseProvider {
                         },
                     ],
                     provider: { id: this.id, name: this.name },
-                } as Source);
+                });
             }
 
             const subtitles = await this.fetchSubtitles(media);

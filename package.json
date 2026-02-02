@@ -10,7 +10,7 @@
         "clean": "npx rimraf dist"
     },
     "dependencies": {
-        "@omss/framework": "^1.1.4",
+        "@omss/framework": "^1.1.7",
         "dotenv": "^16.4.5"
     },
     "devDependencies": {
