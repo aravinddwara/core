@@ -1,7 +1,8 @@
-import { BaseProvider, Subtitle } from '@omss/framework';
-import { ProviderCapabilities, ProviderMediaObject, ProviderResult, Source } from '@omss/framework';
-import { StreamResponse } from './vidzee.types.js';
+import { BaseProvider, type Subtitle, type SourceType } from '@omss/framework';
+import type { ProviderCapabilities, ProviderMediaObject, ProviderResult, Source } from '@omss/framework';
+import type { StreamResponse } from './vidzee.types.js';
 import axios from 'axios';
+import decrypt from './decrypt.js';
 
 export class VidZeeProvider extends BaseProvider {
     readonly id = 'vidzee';
@@ -17,7 +18,7 @@ export class VidZeeProvider extends BaseProvider {
     };
 
     readonly capabilities: ProviderCapabilities = {
-        supportedContentTypes: ['movies'],
+        supportedContentTypes: ['movies', 'tv'],
     };
 
     /**
@@ -31,42 +32,28 @@ export class VidZeeProvider extends BaseProvider {
      * Fetch TV episode sources
      */
     async getTVSources(media: ProviderMediaObject): Promise<ProviderResult> {
-        if (!media.s || !media.e) {
-            return this.emptyResult('Missing season/episode data', media);
-        }
-        return this.getSources(media, { 
-            type: 'tv', 
-            season: media.s, 
-            episode: media.e 
+        return this.getSources(media, {
+            type: 'tv',
+            season: media.s?.toString(),
+            episode: media.e?.toString(),
         });
     }
 
     /**
-     * Main scraping logic - Try all servers in parallel
+     * Main scraping logic - Parallel servers + decryption
      */
-    private async getSources(
-        media: ProviderMediaObject, 
-        params: { type: 'movie' | 'tv'; season?: number; episode?: number }
-    ): Promise<ProviderResult> {
+    private async getSources(media: ProviderMediaObject, params: { type: 'movie' | 'tv'; season?: string; episode?: string }): Promise<ProviderResult> {
         try {
             const tmdbId = media.tmdbId;
-
-            // Get decrypt key. needs to be done later
-            /*
-            const keyReq = await axios.get('https://core.vidzee.wtf/api-key', {
-                headers: this.HEADERS,
-                timeout: 8000,
+            this.console.debug('VidZee scrape started', {
+                tmdbId,
+                type: params.type,
+                ...(params.season && { season: params.season }),
+                ...(params.episode && { episode: params.episode }),
             });
 
-            const rawkey = keyReq.data;
-            const  */
-
-            // Build server requests based on media type
-            const serverPromises = Array.from({ length: 14 }, (_, serverId) =>
-                this.fetchServer(tmdbId, serverId, params),
-            );
-
-            // Wait for all responses
+            // 1. Parallel server requests
+            const serverPromises = Array.from({ length: 14 }, (_, serverId) => this.fetchServer(tmdbId, serverId, params));
             const results = await Promise.allSettled(serverPromises);
             const successfulResponses: StreamResponse[] = [];
 
@@ -74,69 +61,33 @@ export class VidZeeProvider extends BaseProvider {
                 const result = results[i];
                 if (result.status === 'fulfilled' && result.value) {
                     successfulResponses.push(result.value);
-                    this.console.debug(`Server ${i} succeeded`, { 
-                        provider: result.value.provider,
-                        sourcesCount: result.value.url.length,
-                        serverInfo: result.value.serverInfo
-                    });
-                } else {
-                    this.console.debug(`Server ${i} failed`);
                 }
             }
 
             if (successfulResponses.length === 0) {
-                return this.emptyResult(
-                    `No working ${params.type} servers found`, 
-                    media
-                );
+                return this.emptyResult('No working servers', media);
             }
 
-            // Aggregate unique sources and subtitles
-            const allSources = new Set<string>();
+            // 2. Parallel decryption of ALL urls from ALL successful servers
+            const decryptPromises = successfulResponses.map((response) => decrypt(response.url).then((decryptedLinks) => ({ response, decryptedLinks })));
+
+            const decryptionResults = await Promise.all(decryptPromises);
+
+            // Flatten and deduplicate decrypted links
+            const allDecryptedLinks: string[] = [];
             const allSubtitles = new Map<string, Subtitle>();
-            const sources: Source[] = [];
 
-            for (const response of successfulResponses) {
-                // Build master playlist URL
-                const masterUrl = response.thumbnail.replace(
-                    /\/thumbnail\/thumbnail\.vtt$/,
-                    '/index.m3u8',
-                );
+            for (const { response, decryptedLinks } of decryptionResults) {
+                allDecryptedLinks.push(...decryptedLinks);
 
-                if (masterUrl.startsWith('http')) {
-                    const proxyUrl = this.createProxyUrl(masterUrl, {
-                        ...this.HEADERS,
-                        Referer: `${this.BASE_URL}/`,
-                    });
-                    
-                    if (!allSources.has(proxyUrl)) {
-                        allSources.add(proxyUrl);
-                        
-                        sources.push({
-                            url: proxyUrl,
-                            type: 'hls',
-                            quality: 'up to HD',
-                            audioTracks: response.url.map(url => ({
-                                language: url.lang,
-                                label: `${url.name} (${url.flag})`,
-                                default: url.lang === 'en',
-                            })),
-                            provider: {
-                                id: this.id,
-                                name: `${this.name} (${response.serverInfo.name})`,
-                            },
-                        });
-                    }
-                }
-
-                // Add unique subtitles
+                // Process subtitles
                 for (const track of response.tracks) {
                     if (track.url && track.lang) {
                         const proxySubUrl = this.createProxyUrl(track.url, this.HEADERS);
-                        const subId = `${this.id}_sub_${track.lang}_${response.serverInfo.number}`;
-                        
-                        if (!allSubtitles.has(proxySubUrl)) {
-                            allSubtitles.set(proxySubUrl, {
+                        const subKey = `${track.lang}_${response.serverInfo.number}`;
+
+                        if (!allSubtitles.has(subKey)) {
+                            allSubtitles.set(subKey, {
                                 url: proxySubUrl,
                                 label: track.lang.replace(/\d+/g, '').trim(),
                                 format: 'vtt',
@@ -146,38 +97,48 @@ export class VidZeeProvider extends BaseProvider {
                 }
             }
 
-            this.console.success(
-                `Collected ${sources.length} unique sources, ${allSubtitles.size} unique subtitles`,
-                media,
-            );
+            // Deduplicate links
+            const uniqueLinks = [...new Set(allDecryptedLinks)].filter((link) => link && link.startsWith('http'));
+
+            const sources: Source[] = uniqueLinks.map((link) => ({
+                url: this.createProxyUrl(link, {
+                    ...this.HEADERS,
+                    Referer: `${this.BASE_URL}/`,
+                }),
+                type: this.inferType(link) as SourceType,
+                quality: this.inferQuality(link),
+                audioTracks: [
+                    {
+                        language: 'eng',
+                        label: 'English',
+                    },
+                ],
+                provider: {
+                    id: this.id,
+                    name: this.name,
+                },
+            }));
+
+            this.console.success(`${sources.length} unique decrypted sources, ${allSubtitles.size} subtitles`, media);
 
             return {
                 sources,
                 subtitles: Array.from(allSubtitles.values()),
                 diagnostics: [],
             };
-
         } catch (error) {
-            this.console.error('VidZee scrape failed completely', error, media);
-            return this.emptyResult(
-                error instanceof Error ? error.message : 'Unknown provider error',
-                media,
-            );
+            this.console.error('VidZee failed completely', error, media);
+            return this.emptyResult(error instanceof Error ? error.message : 'Unknown error', media);
         }
     }
 
     /**
      * Fetch single server response
      */
-    private async fetchServer(
-        tmdbId: string, 
-        serverId: number, 
-        params: { type: 'movie' | 'tv'; season?: number; episode?: number }
-    ): Promise<StreamResponse | null> {
+    private async fetchServer(tmdbId: string, serverId: number, params: { type: 'movie' | 'tv'; season?: string; episode?: string }): Promise<StreamResponse | null> {
         try {
             let url = `https://player.vidzee.wtf/api/server?id=${tmdbId}&sr=${serverId}`;
-            
-            // Add TV episode params
+
             if (params.type === 'tv' && params.season && params.episode) {
                 url += `&ss=${params.season}&ep=${params.episode}`;
             }
@@ -188,20 +149,13 @@ export class VidZeeProvider extends BaseProvider {
             });
 
             const data = response.data;
-            
-            // Validate StreamResponse structure
-            if (
-                data &&
-                typeof data === 'object' &&
-                typeof (data as any).thumbnail === 'string' &&
-                Array.isArray((data as any).url) &&
-                Array.isArray((data as any).tracks)
-            ) {
+
+            if (data && typeof data === 'object' && typeof (data as any).thumbnail === 'string' && Array.isArray((data as any).url) && Array.isArray((data as any).tracks)) {
                 return data as StreamResponse;
             }
 
             return null;
-        } catch (error) {
+        } catch {
             return null;
         }
     }
@@ -211,7 +165,7 @@ export class VidZeeProvider extends BaseProvider {
      */
     private emptyResult(message: string, media: ProviderMediaObject): ProviderResult {
         // @ts-ignore
-        this.console.warn('VidZee empty result', { message, tmdbId: media.tmdbId });
+        this.console.warn('VidZee: Empty result', { message, tmdbId: media.tmdbId });
         return {
             sources: [],
             subtitles: [],

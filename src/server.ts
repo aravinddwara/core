@@ -40,10 +40,8 @@ async function main() {
 
     // Register providers
     const registry = server.getRegistry();
-
-    // Your custom providers (auto-discovered from ./src/providers/)
     await registry.discoverProviders(path.join(__dirname, './providers/'))
-    
+
     await server.start();
 }
 

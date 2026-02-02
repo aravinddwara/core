@@ -1,5 +1,5 @@
 import { BaseProvider } from '@omss/framework';
-import { ProviderCapabilities, ProviderMediaObject, ProviderResult, Source, Subtitle } from '@omss/framework';
+import type { ProviderCapabilities, ProviderMediaObject, ProviderResult, Source, Subtitle } from '@omss/framework';
 import axios from 'axios';
 
 export class VixSrcProvider extends BaseProvider {
