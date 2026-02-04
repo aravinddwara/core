@@ -1,0 +1,17 @@
+node_modules
+.git
+.env
+.env.*
+!.env.example
+dist
+src
+*.log
+.DS_Store
+.vscode
+.idea
+coverage
+*.md
+!README.md
+tsconfig.json
+.prettierrc
+.eslintrc

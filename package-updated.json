@@ -1,0 +1,23 @@
+{
+    "name": "@cinepro/core",
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "tsx watch src/server.ts",
+        "build": "tsc",
+        "vercel-build": "npm run build && node scripts/copy-providers.js",
+        "start": "npm run build && node dist/server.js",
+        "format": "prettier --write src",
+        "clean": "npx rimraf dist api/providers api/config.js"
+    },
+    "dependencies": {
+        "@omss/framework": "^1.1.7",
+        "dotenv": "^16.4.5"
+    },
+    "devDependencies": {
+        "@types/node": "^22.7.4",
+        "prettier": "^3.3.3",
+        "tsx": "^4.19.1",
+        "typescript": "^5.6.2"
+    }
+}
